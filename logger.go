@@ -8,14 +8,12 @@ import (
 	"strings"
 )
 
-type Logger struct {
-	logger   *log.Logger
-	logOut   *os.File
-	logLevel int
-}
+const logPrefix = ""
 
 var (
-	logger   Logger
+	logger   *log.Logger
+	logLevel = 5
+	logFile *os.File
 	levelMap map[string]int = map[string]int{
 		"DEBUG": 5,
 		"INFO":  4,
@@ -26,86 +24,83 @@ var (
 )
 
 func init() {
-	logger.logOut = os.Stdout
-	logger.logger = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	logger.logLevel = 5
+	logger = log.New(os.Stdout, logPrefix, log.LstdFlags | log.Lshortfile)
 }
 
 func SetLevel(level string) error {
 	level = strings.ToUpper(level)
 	if v, ok := levelMap[level]; ok {
-		logger.logLevel = v
+		logLevel = v
 	} else {
 		return errors.New(fmt.Sprintf("The log level %s is invalid", level))
 	}
 	return nil
 }
 
-func SetLogFile(file string) error {
-	logfile, err := os.OpenFile(file, os.O_APPEND, 0644)
+func SetLogFile(file string) (err error) {
+	logFile, err = os.OpenFile(file, os.O_APPEND | os.O_RDWR, 0644)
 	if os.IsNotExist(err) {
-		logfile, err = os.Create(file)
+		logFile, err = os.Create(file)
 		if err != nil {
 			return errors.New(fmt.Sprintf("Create log file %s error: %s\n", file, err.Error()))
 		}
 	} else if err != nil {
 		return errors.New(fmt.Sprintf("Open log file %s error: %s\n", file, err.Error()))
 	}
-	logger.logOut = logfile
-	logger.logger = log.New(logfile, "", log.LstdFlags)
+	logger = log.New(logFile, logPrefix, log.LstdFlags)
 	return nil
 }
 
 func Flush() {
-	logger.logOut.Sync()
-	logger.logOut.Close()
+	logFile.Sync()
+	logFile.Close()
 }
 
 func Debug(v ...interface{}) {
-	if logger.logLevel >= levelMap["DEBUG"] {
-		logger.logger.Output(2, "DEBUG "+fmt.Sprintln(v...))
+	if logLevel >= levelMap["DEBUG"] {
+		logger.Output(2, "DEBUG " + fmt.Sprintln(v...))
 	}
 }
 
 func Debugf(format string, v ...interface{}) {
-	if logger.logLevel >= levelMap["DEBUG"] {
-		logger.logger.Output(2, "DEBUG "+fmt.Sprintf(format, v...))
+	if logLevel >= levelMap["DEBUG"] {
+		logger.Output(2, "DEBUG " + fmt.Sprintf(format, v...))
 	}
 }
 
 func Info(v ...interface{}) {
-	if logger.logLevel >= levelMap["INFO"] {
-		logger.logger.Output(2, "INFO "+fmt.Sprintln(v...))
+	if logLevel >= levelMap["INFO"] {
+		logger.Output(2, "INFO " + fmt.Sprintln(v...))
 	}
 }
 
 func Infof(format string, v ...interface{}) {
-	if logger.logLevel >= levelMap["INFO"] {
-		logger.logger.Output(2, "INFO "+fmt.Sprintf(format, v...))
+	if logLevel >= levelMap["INFO"] {
+		logger.Output(2, "INFO " + fmt.Sprintf(format, v...))
 	}
 }
 
 func Warn(v ...interface{}) {
-	if logger.logLevel >= levelMap["WARN"] {
-		logger.logger.Output(2, "WARN "+fmt.Sprintln(v...))
+	if logLevel >= levelMap["WARN"] {
+		logger.Output(2, "WARN " + fmt.Sprintln(v...))
 	}
 }
 
 func Warnf(format string, v ...interface{}) {
-	if logger.logLevel >= levelMap["WARN"] {
-		logger.logger.Output(2, "WARN "+fmt.Sprintf(format, v...))
+	if logLevel >= levelMap["WARN"] {
+		logger.Output(2, "WARN " + fmt.Sprintf(format, v...))
 	}
 }
 
 func Error(v ...interface{}) {
-	if logger.logLevel >= levelMap["ERROR"] {
-		logger.logger.Output(2, "ERROR "+fmt.Sprintln(v...))
+	if logLevel >= levelMap["ERROR"] {
+		logger.Output(2, "ERROR " + fmt.Sprintln(v...))
 	}
 }
 
 func Errorf(format string, v ...interface{}) {
-	if logger.logLevel >= levelMap["ERROR"] {
-		logger.logger.Output(2, "ERROR "+fmt.Sprintf(format, v...))
+	if logLevel >= levelMap["ERROR"] {
+		logger.Output(2, "ERROR " + fmt.Sprintf(format, v...))
 	}
 }
 
@@ -114,7 +109,7 @@ func Fatal(v ...interface{}) {
 		Flush()
 		os.Exit(1)
 	}()
-	logger.logger.Output(2, "FATAL "+fmt.Sprintln(v...))
+	logger.Output(2, "FATAL " + fmt.Sprintln(v...))
 }
 
 func Fatalf(format string, v ...interface{}) {
@@ -122,5 +117,5 @@ func Fatalf(format string, v ...interface{}) {
 		Flush()
 		os.Exit(1)
 	}()
-	logger.logger.Output(2, "FATAL "+fmt.Sprintf(format, v...))
+	logger.Output(2, "FATAL " + fmt.Sprintf(format, v...))
 }
