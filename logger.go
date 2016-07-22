@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -27,28 +26,31 @@ func init() {
 	logger = log.New(os.Stdout, logPrefix, log.LstdFlags | log.Lshortfile)
 }
 
-func SetLevel(level string) error {
+func SetLevel(level string) {
 	level = strings.ToUpper(level)
 	if v, ok := levelMap[level]; ok {
 		logLevel = v
 	} else {
-		return errors.New(fmt.Sprintf("The log level %s is invalid", level))
+		panic(fmt.Sprintf("The log level %s is invalid", level))
 	}
-	return nil
 }
 
-func SetLogFile(file string) (err error) {
+func SetLogFile(file string) {
+	var err error
 	logFile, err = os.OpenFile(file, os.O_APPEND | os.O_RDWR, 0644)
 	if os.IsNotExist(err) {
 		logFile, err = os.Create(file)
 		if err != nil {
-			return errors.New(fmt.Sprintf("Create log file %s error: %s\n", file, err.Error()))
+			panic(fmt.Sprintf("Create log file %s error: %s\n", file, err.Error()))
 		}
 	} else if err != nil {
-		return errors.New(fmt.Sprintf("Open log file %s error: %s\n", file, err.Error()))
+		panic(fmt.Sprintf("Open log file %s error: %s\n", file, err.Error()))
 	}
-	logger = log.New(logFile, logPrefix, log.LstdFlags)
-	return nil
+	logger.SetOutput(logFile)
+}
+
+func SetFlag(flag int) {
+	logger.SetFlags(flag)
 }
 
 func Flush() {
