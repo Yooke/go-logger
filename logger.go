@@ -18,7 +18,8 @@ var (
 		"INFO":  4,
 		"WARN":  3,
 		"ERROR": 2,
-		"FATAL": 1,
+		"PANIC": 1,
+		"FATAL": 0,
 	}
 )
 
@@ -104,6 +105,22 @@ func Errorf(format string, v ...interface{}) {
 	if logLevel >= levelMap["ERROR"] {
 		logger.Output(2, "ERROR " + fmt.Sprintf(format, v...))
 	}
+}
+
+func Panic(v ...interface{}) {
+	s := fmt.Sprintln(v...)
+	if logLevel >= levelMap["PANIC"] {
+		logger.Output(2, "PANIC " + s)
+	}
+	panic(s)
+}
+
+func Panicf(format string, v ...interface{}) {
+	s := fmt.Sprintf(format, v...)
+	if logLevel >= levelMap["PANIC"] {
+		logger.Output(2, "PANIC " + s)
+	}
+	panic(s)
 }
 
 func Fatal(v ...interface{}) {
